@@ -1,0 +1,11 @@
+Use the following commands:
+
+1 - Python -m venv ./venv
+
+2 - .\venv\Scripts\activate
+
+3 - pip install flask
+
+4 - set FLASK_APP=routes.py
+
+5 - flask run

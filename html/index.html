@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+	<!--[if IE 8]>
+		<html xmlns="http://www.w3.org/1999/xhtml" class="ie8" lang="pt-PT">
+	<![endif]-->
+	<!--[if !(IE 8) ]><!-->
+		<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-PT">
+	<!--<![endif]-->
+	<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Iniciar sessão &lsaquo; Tavares Ferreira &#8212; WordPress</title>
+	<link rel='dns-prefetch' href='//s.w.org' />
+	<link rel='stylesheet' id='dashicons-css'  href='http://tavaresferreira.net/wp-includes/css/dashicons.min.css' type='text/css' media='all' />
+	<link rel='stylesheet' id='buttons-css'  href='http://tavaresferreira.net/wp-includes/css/buttons.min.css' type='text/css' media='all' />
+	<link rel='stylesheet' id='forms-css'  href='http://tavaresferreira.net/wp-admin/css/forms.min.css' type='text/css' media='all' />
+	<link rel='stylesheet' id='l10n-css'  href='http://tavaresferreira.net/wp-admin/css/l10n.min.css' type='text/css' media='all' />
+	<link rel='stylesheet' id='login-css'  href='http://tavaresferreira.net/wp-admin/css/login.min.css' type='text/css' media='all' />
+		
+	<style type="text/css">
+		.mylogo
+		{
+			width:100px;
+			height:100px
+		}
+		.divCheck
+		{
+			text-align:center
+		}
+		
+		#city_latlong
+		{
+			margin-bottom:20px;
+		}
+		
+		#result{
+			width:310px;
+			background-color:#FFF;
+			margin:20px 0 0 0 ;
+			padding-top:5px;
+			padding-bottom:5px;
+			padding-left:10px;
+			display:none;
+		}
+		
+		#result span{
+			font-weight:bold;
+			color:red
+		}
+		
+		#genre{
+			text-transform:uppercase
+		}
+		
+		#result ul{
+			list-style:none;
+		}
+		
+	</style>
+	</head>
+	<body class="login no-js login-action-login wp-core-ui  locale-pt-pt">
+	
+		<div id="login">
+		<h1><img src="https://pngimg.com/uploads/thermometer/thermometer_PNG2.png" class="mylogo" /></h1>
+	
+		<form name="loginform" id="loginform"  method="post">
+			<p >
+				<div id="fl_city">
+					<label for="">Name of the City</label>
+					<input type="text" name="" id="city_latlong" class="input" />
+				</div>
+				
+				<div id="fl_latlng" style="display: none">
+					<label for="">Latitude</label>
+					<input type="text" name="" id="latitude" class="input" />
+					<br/>
+					<label for="">Longitude</label>
+					<input type="text" name="" id="longitude" class="input" />
+				</div>
+				<label>Lat/Lng &nbsp;</label><input onclick="_toggle()" id="c_latlng" type="checkbox"/><br/><br/>
+			</p>
+
+			<div class="divCheck">
+				<button onclick="fetchData()" type="button" style="float:none" class="button button-primary button-large">GET INFORMATION</button>
+			</div>
+		</form>
+
+	<script type='text/javascript' src='http://tavaresferreira.net/cpu/public/js/cpf/jquery.js'></script>
+
+
+	<div class="clear"></div>
+	
+	<div id="result">
+		<p>Temperature (Celsius): <span id="temperature"></span></p>
+		<p>Genre Suggested: <span id="genre"></span></p>
+		<br/>
+		<ul>
+		</ul>
+	</div>
+	
+	<script type="text/javascript">
+		
+		function _toggle()
+		{
+			$("#fl_city").toggle();
+			$("#fl_latlng").toggle();
+		}
+		
+		function validateData(value = "")
+		{
+			if(typeof(value) == "string")
+			{
+				if(value == "") 
+				{
+					return "É necessário informar uma cidade."
+				}
+			}
+			else if(typeof(value) == "object")
+			{
+				if(value.longitude == "" || isNaN(value.longitude) == true)
+				{
+					return "É necessário informar um valor válido para a longitude";
+				}
+				
+				if(value.latitude == "" || isNaN(value.latitude == true))
+				{
+					return "É necessário informar um valor válido para a latitude";
+				}
+				
+				if ( Math.abs(value.latitude) <= 90 == false)
+				{
+					return "Latitude é inválida";
+				}
+				
+				if ( Math.abs(value.longitude) <= 180 == false)
+				{
+					return "Longitude é inválida";
+				}
+			}
+			
+			return true;
+		}
+		
+		function fetchData()
+		{
+
+			if(jQuery("#c_latlng").is(":checked") == true)
+			{
+				toJSON = { longitude: $("#longitude").val() , latitude: $("#latitude").val() , isLatLng:'Y' };
+				validation = validateData( toJSON );
+			}
+			else
+			{
+				toJSON = { cidade: $("#city_latlong").val() , isLatLng:'N' };
+				validation = validateData( $("#city_latlong").val() );
+			}
+			
+			if(validation != true)
+			{
+				alert( validation )
+				return false;
+			}
+			
+			$.ajax({
+				type:"POST",
+				url:"http://localhost:5000/process_data",
+				data: toJSON,
+				beforeSend: function(){ $("#result").hide() },
+				//complete: removeCarregando,
+				success: _success ,
+				error:function(){ alert("DEU ERRO NA REQUISIÇÃO AJAX"); }
+			});
+		}
+		
+		function _success(data){
+			console.log(data);
+			$("#genre").html(data.genre);
+			$("#temperature").html(data.temperature);
+			$("#result ul").html("");
+			for(c = 0; c < data.playlist.length; c++)
+			{
+				_target = data.playlist[c];
+				//a = $("<a>")
+				li = $("<li>");
+				li.html(_target.song + " - "+_target.artist)
+				/*
+				a.attr({href:_target.link,target:"_BLANK"})
+				a.appendTo(li);
+				a.html(_target.song + " - "+_target.artist)
+				*/
+				li.appendTo("#result ul");
+			}
+			$("#result").show();
+		}
+	</script>
+	</body>
+	</html>
+	
